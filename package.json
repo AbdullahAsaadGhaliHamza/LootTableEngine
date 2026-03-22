@@ -1,0 +1,19 @@
+{
+  "name": "loot-table-engine",
+  "version": "1.0.0",
+  "description": "Weighted, nested loot table engine with conditional drop support",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "loot-engine": "./cli/loot-engine.js"
+  },
+  "scripts": {
+    "test": "node --test tests/engine.test.js",
+    "example": "node examples/basic_usage.js"
+  },
+  "keywords": ["loot", "loot-table", "procedural", "rpg", "game-dev", "weighted-random"],
+  "license": "MIT"
+}

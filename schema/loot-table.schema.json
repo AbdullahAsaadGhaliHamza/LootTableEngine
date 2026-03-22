@@ -1,0 +1,223 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/yourname/loot-table-engine/schema/loot-table.json",
+  "title": "Loot Table Engine Schema",
+  "description": "Schema for defining weighted, conditional loot tables",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "#/definitions/Table"
+  },
+  "definitions": {
+    "Table": {
+      "type": "object",
+      "required": ["entries"],
+      "properties": {
+        "description": { "type": "string" },
+        "rolls": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["weighted", "all"],
+          "default": "weighted",
+          "description": "weighted picks one entry per roll. all evaluates every entry with its own chance."
+        },
+        "unique": {
+          "type": "boolean",
+          "description": "If true, the same item id cannot appear more than once in the results"
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/Entry" }
+        }
+      }
+    },
+    "Entry": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["item", "table_ref"],
+          "default": "item"
+        },
+        "ref": {
+          "type": "string",
+          "description": "Required when type is table_ref. Points to another table id."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1
+        },
+        "chance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1,
+          "description": "After a weighted pick, this is the probability the item actually drops (0 to 1)"
+        },
+        "quantity": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            {
+              "type": "object",
+              "required": ["min", "max"],
+              "properties": {
+                "min": { "type": "integer", "minimum": 1 },
+                "max": { "type": "integer", "minimum": 1 }
+              }
+            }
+          ]
+        },
+        "meta": {
+          "type": "object",
+          "description": "Arbitrary data attached to the item drop (damage, element, rarity, etc.)"
+        },
+        "condition": { "$ref": "#/definitions/Condition" }
+      }
+    },
+    "Condition": {
+      "description": "A condition that must be true for this entry to be eligible. Can be a boolean logic tree or a custom function name.",
+      "oneOf": [
+        { "type": "string", "description": "Truthy key lookup on context object" },
+        {
+          "type": "object",
+          "properties": {
+            "and": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Condition" }
+            }
+          },
+          "required": ["and"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "or": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Condition" }
+            }
+          },
+          "required": ["or"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "not": { "$ref": "#/definitions/Condition" }
+          },
+          "required": ["not"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "has_flag": { "type": "string" }
+          },
+          "required": ["has_flag"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "eq": {
+              "type": "object",
+              "required": ["key", "value"],
+              "properties": {
+                "key": { "type": "string" },
+                "value": {}
+              }
+            }
+          },
+          "required": ["eq"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gt": {
+              "type": "object",
+              "required": ["key", "value"],
+              "properties": {
+                "key": { "type": "string" },
+                "value": { "type": "number" }
+              }
+            }
+          },
+          "required": ["gt"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "gte": {
+              "type": "object",
+              "required": ["key", "value"],
+              "properties": {
+                "key": { "type": "string" },
+                "value": { "type": "number" }
+              }
+            }
+          },
+          "required": ["gte"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "lt": {
+              "type": "object",
+              "required": ["key", "value"],
+              "properties": {
+                "key": { "type": "string" },
+                "value": { "type": "number" }
+              }
+            }
+          },
+          "required": ["lt"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "lte": {
+              "type": "object",
+              "required": ["key", "value"],
+              "properties": {
+                "key": { "type": "string" },
+                "value": { "type": "number" }
+              }
+            }
+          },
+          "required": ["lte"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "in": {
+              "type": "object",
+              "required": ["key", "values"],
+              "properties": {
+                "key": { "type": "string" },
+                "values": { "type": "array" }
+              }
+            }
+          },
+          "required": ["in"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "fn": {
+              "type": "string",
+              "description": "Name of a custom condition registered with engine.registerCondition()"
+            },
+            "args": {
+              "type": "object",
+              "description": "Passed as the second argument to the condition handler"
+            }
+          },
+          "required": ["fn"]
+        }
+      ]
+    }
+  }
+}

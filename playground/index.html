@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loot Table Engine — Playground</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f12;
+    --surface: #13161b;
+    --surface2: #1a1e26;
+    --border: #252a35;
+    --accent: #e8a230;
+    --accent2: #5b9bd5;
+    --green: #4ec994;
+    --red: #e05c5c;
+    --text: #c9d0dc;
+    --muted: #5a6272;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+
+  header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--text); }
+
+  .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: 1fr 1fr;
+    height: calc(100vh - 61px);
+    overflow: hidden;
+  }
+
+  .pane {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .pane-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .pane-title {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .pane-title .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 6px;
+  }
+
+  textarea, .editor {
+    flex: 1;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 16px;
+    overflow-y: auto;
+    white-space: pre;
+  }
+
+  .output-pane {
+    grid-row: 1 / 3;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .output-inner {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .roll-group {
+    margin-bottom: 20px;
+  }
+
+  .roll-label {
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .roll-label span { color: var(--accent); }
+
+  .drop-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    animation: slideIn 0.15s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .drop-icon { color: var(--accent); font-size: 11px; }
+
+  .drop-name { flex: 1; color: var(--text); }
+
+  .drop-qty {
+    font-size: 11px;
+    color: var(--accent2);
+    background: rgba(91,155,213,0.1);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .drop-meta {
+    font-size: 10px;
+    color: var(--muted);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .empty-roll {
+    color: var(--muted);
+    font-size: 11px;
+    padding: 6px 10px;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+  }
+
+  .ctx-pane {
+    background: var(--surface);
+  }
+
+  .ctx-inner {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .ctx-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .ctx-key, .ctx-val {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    outline: none;
+    flex: 1;
+  }
+
+  .ctx-key:focus, .ctx-val:focus { border-color: var(--accent2); }
+
+  .ctx-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.1s;
+  }
+
+  .ctx-remove:hover { color: var(--red); }
+
+  .flag-area {
+    padding: 0 16px 12px;
+  }
+
+  .flag-label { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+
+  .flag-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  .flag-input:focus { border-color: var(--accent2); }
+
+  .controls {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .table-select {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .roll-count {
+    width: 52px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    outline: none;
+    text-align: center;
+  }
+
+  .btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.1s;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn:active { opacity: 0.7; }
+
+  .btn-roll {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .error-bar {
+    margin: 8px 16px;
+    padding: 8px 12px;
+    background: rgba(224,92,92,0.12);
+    border: 1px solid rgba(224,92,92,0.3);
+    border-radius: 4px;
+    color: var(--red);
+    font-size: 11px;
+    display: none;
+  }
+
+  .error-bar.visible { display: block; }
+
+  .stats-bar {
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 10px;
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .stats-bar span { color: var(--accent); }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">loot<span>-table-engine</span></div>
+  <div class="badge">playground</div>
+</header>
+
+<div class="main">
+  <div class="pane" id="table-pane">
+    <div class="pane-header">
+      <div class="pane-title"><span class="dot"></span>Table JSON</div>
+      <button class="btn btn-sm" onclick="loadExample()">Load Example</button>
+    </div>
+    <div class="error-bar" id="json-error"></div>
+    <textarea id="table-editor" spellcheck="false"></textarea>
+    <div class="controls">
+      <select class="table-select" id="table-select"></select>
+      <input type="number" class="roll-count" id="roll-count" value="1" min="1" max="50">
+      <button class="btn btn-roll" onclick="doRoll()">Roll</button>
+    </div>
+  </div>
+
+  <div class="pane output-pane">
+    <div class="pane-header">
+      <div class="pane-title"><span class="dot" style="background:var(--green)"></span>Results</div>
+      <button class="btn btn-sm" onclick="clearOutput()">Clear</button>
+    </div>
+    <div class="output-inner" id="output"></div>
+    <div class="stats-bar" id="stats">Ready.</div>
+  </div>
+
+  <div class="pane ctx-pane">
+    <div class="pane-header">
+      <div class="pane-title"><span class="dot" style="background:var(--accent2)"></span>Context</div>
+      <button class="btn btn-sm" onclick="addCtxRow()">+ Add</button>
+    </div>
+    <div class="ctx-inner" id="ctx-rows"></div>
+    <div class="flag-area">
+      <div class="flag-label">flags (comma-separated)</div>
+      <input class="flag-input" id="flag-input" placeholder="boss_killed_with_fire, dragon_slain">
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { LootEngine } from '../src/index.js'
+window.LootEngine = LootEngine
+</script>
+
+<script>
+const EXAMPLE = {
+  goblin_pouch: {
+    description: "Goblin drop",
+    rolls: 1,
+    entries: [
+      { id: "gold_coin",     name: "Gold Coin",      weight: 50, quantity: { min: 1, max: 8 } },
+      { id: "iron_dagger",   name: "Iron Dagger",    weight: 25 },
+      { id: "leather_scrap", name: "Leather Scrap",  weight: 20 },
+      { id: "nothing",       name: "Nothing",        weight: 5  }
+    ]
+  },
+  chest_boss: {
+    description: "Boss chest. Fire tome only drops if boss was killed with fire.",
+    mode: "all",
+    entries: [
+      { id: "gold_pile",  name: "Gold Pile",     chance: 1,    quantity: { min: 50, max: 200 } },
+      { id: "rare_gem",   name: "Sapphire",      chance: 0.4  },
+      { id: "fire_tome",  name: "Tome of Embers", chance: 0.8,
+        condition: { has_flag: "boss_killed_with_fire" }
+      },
+      { id: "dragon_crown", name: "Dragon Crown", chance: 0.5,
+        condition: {
+          and: [
+            { has_flag: "dragon_slain" },
+            { gte: { key: "player_level", value: 20 } }
+          ]
+        }
+      }
+    ]
+  }
+}
+
+const editor = document.getElementById('table-editor')
+const sel = document.getElementById('table-select')
+const output = document.getElementById('output')
+const jsonError = document.getElementById('json-error')
+const stats = document.getElementById('stats')
+
+let rollTotal = 0
+let dropTotal = 0
+
+function loadExample() {
+  editor.value = JSON.stringify(EXAMPLE, null, 2)
+  refreshSelect()
+}
+
+function refreshSelect() {
+  try {
+    const tables = JSON.parse(editor.value)
+    const keys = Object.keys(tables)
+    sel.innerHTML = keys.map(k => `<option>${k}</option>`).join('')
+    jsonError.classList.remove('visible')
+  } catch(e) {
+    jsonError.textContent = e.message
+    jsonError.classList.add('visible')
+  }
+}
+
+function buildContext() {
+  const ctx = {}
+  document.querySelectorAll('.ctx-row').forEach(row => {
+    const k = row.querySelector('.ctx-key').value.trim()
+    const v = row.querySelector('.ctx-val').value.trim()
+    if (!k) return
+    const num = Number(v)
+    ctx[k] = isNaN(num) || v === '' ? v : num
+  })
+  const flags = document.getElementById('flag-input').value
+    .split(',').map(f => f.trim()).filter(Boolean)
+  if (flags.length) ctx.flags = flags
+  return ctx
+}
+
+function doRoll() {
+  try {
+    const tables = JSON.parse(editor.value)
+    const engine = new window.LootEngine(tables)
+    const tableId = sel.value
+    const count = parseInt(document.getElementById('roll-count').value, 10) || 1
+    const ctx = buildContext()
+
+    const group = document.createElement('div')
+    group.className = 'roll-group'
+
+    let totalDrops = 0
+    for (let i = 0; i < count; i++) {
+      const results = engine.roll(tableId, ctx)
+      totalDrops += results.length
+
+      const label = document.createElement('div')
+      label.className = 'roll-label'
+      label.innerHTML = `Roll <span>#${rollTotal + i + 1}</span> &rarr; ${tableId}`
+      group.appendChild(label)
+
+      if (results.length === 0) {
+        const el = document.createElement('div')
+        el.className = 'empty-roll'
+        el.textContent = '(nothing dropped)'
+        group.appendChild(el)
+      } else {
+        results.forEach(item => {
+          const el = document.createElement('div')
+          el.className = 'drop-item'
+          const metaStr = Object.keys(item.meta).length ? JSON.stringify(item.meta) : ''
+          el.innerHTML = `
+            <span class="drop-icon">+</span>
+            <span class="drop-name">${item.name}</span>
+            ${item.quantity > 1 ? `<span class="drop-qty">x${item.quantity}</span>` : ''}
+            ${metaStr ? `<span class="drop-meta">${metaStr}</span>` : ''}
+          `
+          group.appendChild(el)
+        })
+      }
+    }
+
+    output.prepend(group)
+    rollTotal += count
+    dropTotal += totalDrops
+    stats.innerHTML = `rolls: <span>${rollTotal}</span> &nbsp; drops: <span>${dropTotal}</span> &nbsp; last context: <span>${JSON.stringify(ctx)}</span>`
+    jsonError.classList.remove('visible')
+  } catch(e) {
+    jsonError.textContent = e.message
+    jsonError.classList.add('visible')
+  }
+}
+
+function clearOutput() {
+  output.innerHTML = ''
+  rollTotal = 0
+  dropTotal = 0
+  stats.textContent = 'Ready.'
+}
+
+window.doRoll = doRoll
+window.clearOutput = clearOutput
+window.loadExample = loadExample
+
+window.addCtxRow = function() {
+  const container = document.getElementById('ctx-rows')
+  const row = document.createElement('div')
+  row.className = 'ctx-row'
+  row.innerHTML = `
+    <input class="ctx-key" placeholder="key">
+    <input class="ctx-val" placeholder="value">
+    <button class="ctx-remove" onclick="this.parentElement.remove()">x</button>
+  `
+  container.appendChild(row)
+}
+
+editor.addEventListener('input', refreshSelect)
+loadExample()
+</script>
+</body>
+</html>

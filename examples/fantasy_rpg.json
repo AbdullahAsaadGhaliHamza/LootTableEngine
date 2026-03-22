@@ -1,0 +1,125 @@
+{
+  "goblin_pouch": {
+    "description": "What a goblin drops when killed",
+    "rolls": 1,
+    "entries": [
+      { "id": "gold_coin",    "name": "Gold Coin",      "weight": 50, "quantity": { "min": 1, "max": 8 } },
+      { "id": "iron_dagger",  "name": "Iron Dagger",    "weight": 25 },
+      { "id": "leather_scrap","name": "Leather Scrap",  "weight": 20, "quantity": { "min": 1, "max": 3 } },
+      { "id": "nothing",      "name": "Nothing",        "weight": 5  }
+    ]
+  },
+
+  "chest_common": {
+    "description": "A standard wooden chest in a dungeon corridor",
+    "rolls": 2,
+    "unique": true,
+    "entries": [
+      { "id": "health_potion",   "name": "Health Potion",   "weight": 40 },
+      { "id": "rope",            "name": "Hemp Rope",       "weight": 20 },
+      { "id": "torch_bundle",    "name": "Torch Bundle",    "weight": 20, "quantity": { "min": 2, "max": 5 } },
+      { "id": "silver_coin",     "name": "Silver Coin",     "weight": 15, "quantity": { "min": 5, "max": 20 } },
+      { "id": "map_fragment",    "name": "Map Fragment",    "weight": 5 }
+    ]
+  },
+
+  "chest_boss": {
+    "description": "The chest behind the boss door. Always gives a weapon, sometimes extras.",
+    "mode": "all",
+    "entries": [
+      {
+        "id": "boss_weapon",
+        "type": "table_ref",
+        "ref": "boss_weapons",
+        "chance": 1
+      },
+      {
+        "id": "rare_gem",
+        "name": "Sapphire",
+        "weight": 1,
+        "chance": 0.4
+      },
+      {
+        "id": "fire_tome",
+        "name": "Tome of Embers",
+        "chance": 0.25,
+        "condition": {
+          "has_flag": "boss_killed_with_fire"
+        }
+      },
+      {
+        "id": "cursed_ring",
+        "name": "Cursed Ring",
+        "chance": 0.15,
+        "condition": {
+          "not": { "has_flag": "purified_altar" }
+        }
+      }
+    ]
+  },
+
+  "boss_weapons": {
+    "description": "One weapon drops from the boss chest",
+    "rolls": 1,
+    "entries": [
+      { "id": "flamebreaker",    "name": "Flamebreaker Axe",     "weight": 30, "meta": { "damage": 18, "element": "fire" } },
+      { "id": "stormcaller_bow", "name": "Stormcaller Bow",      "weight": 25, "meta": { "damage": 15, "element": "lightning" } },
+      { "id": "shadow_blade",    "name": "Shadow Blade",         "weight": 20, "meta": { "damage": 20, "element": "dark" } },
+      { "id": "aegis_shield",    "name": "Aegis Shield",         "weight": 15, "meta": { "armor": 25 } },
+      {
+        "id": "dragon_crown",
+        "name": "Dragon Crown",
+        "weight": 10,
+        "meta": { "rarity": "legendary" },
+        "condition": {
+          "and": [
+            { "has_flag": "dragon_slain" },
+            { "gte": { "key": "player_level", "value": 20 } }
+          ]
+        }
+      }
+    ]
+  },
+
+  "merchant_daily": {
+    "description": "Rotates 3 items in a traveling merchant's stock",
+    "rolls": 3,
+    "unique": true,
+    "entries": [
+      { "id": "antidote",       "name": "Antidote",            "weight": 20 },
+      { "id": "mana_crystal",   "name": "Mana Crystal",        "weight": 18 },
+      { "id": "smoke_bomb",     "name": "Smoke Bomb",          "weight": 15 },
+      { "id": "elixir_strength","name": "Elixir of Strength",  "weight": 12 },
+      { "id": "lockpick_set",   "name": "Lockpick Set",        "weight": 10 },
+      {
+        "id": "wanted_poster",
+        "name": "Wanted Poster (Your Face)",
+        "weight": 8,
+        "condition": { "gt": { "key": "bounty", "value": 0 } }
+      },
+      {
+        "id": "guild_token",
+        "name": "Assassin Guild Token",
+        "weight": 5,
+        "condition": { "has_flag": "guild_contact_met" }
+      }
+    ]
+  },
+
+  "dungeon_trap_reward": {
+    "description": "Reward for disarming a trap instead of triggering it",
+    "rolls": 1,
+    "entries": [
+      {
+        "id": "thieves_trophy",
+        "name": "Thief's Trophy",
+        "weight": 60,
+        "condition": {
+          "fn": "rogue_or_high_dex",
+          "args": { "min_dex": 14 }
+        }
+      },
+      { "id": "broken_gear", "name": "Broken Gear", "weight": 40 }
+    ]
+  }
+}
