@@ -1,5 +1,7 @@
 # loot-table-engine
 
+<img width="1920" height="1080" alt="loot-table-engine" src="https://github.com/user-attachments/assets/c941a9b4-fe08-4247-ab1d-ec57d17f2139" />
+
 A weighted, nested loot table system with JSON config and full scripted condition support.
 
 Most loot engines handle the easy case: pick a random item with weights. This one handles the hard case: *should this item even be possible right now?* You can gate drops on flags, numeric comparisons, custom functions, and arbitrary boolean logic, all from JSON or code.
